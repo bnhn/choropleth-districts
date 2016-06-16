@@ -1,21 +1,64 @@
 window.onload = function() {
-    var mymap = L.map('mapid').setView([8.11361508149333, -1.20849609375], 7);
-    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-        maxZoom: 18,
-        id: 'bnhn.06flgikf',
-        accessToken: 'pk.eyJ1IjoiYm5obiIsImEiOiJjaW9lNGM2Y2IwMDB0dXdreGZsZjhic2dzIn0.rxuGQtRHIO4jt4lTg0jRTQ'
-    }).addTo(mymap);
+    var districts;
+    var zoom = 18, ,
+    mapboxURL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
+    Attribution='Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>';
+   
+   var light = L.tileLayer(mapboxURL, {
+        attribution: Attribution,
+        maxZoom: zoom,
+        id: 'mapbox.light',
+        accessToken: AccessToken
+    }),
+    satellite =  L.tileLayer(mapboxURL, {
+        attribution: Attribution,
+        maxZoom: zoom,
+        id: 'mapbox.satellite',
+        accessToken: AccessToken
+    }),
+    street =  L.tileLayer(mapboxURL, {
+        attribution: Attribution,
+        maxZoom: zoom,
+        id: 'mapbox.mapbox-streets-v7',
+        accessToken: AccessToken
+    }),
+    terrain =  L.tileLayer(mapboxURL, {
+        attribution: Attribution,
+        maxZoom: zoom,
+        id: 'mapbox.mapbox-terrain-v2',
+        accessToken: AccessToken
+    }),
+    osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: zoom,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }),
+    thunderforest= L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    });
+
+    var baseMaps={
+        "Light":light,
+        "Satellite":satellite,
+        "Street":street,
+        "Terrain":terrain,
+        "Open Street Maps":osm,
+        "Thunderforest": thunderforest
+    };
+    var mymap = L.map('mapid',{
+        layers:[light]
+    }).setView([8.11361508149333, -1.20849609375], 7);
+    L.control.layers(baseMaps).addTo(mymap);
     L.control.scale().addTo(mymap);
 
+    var colors = ["#ffffb2","#fed976","#feb24c","#fd8d3c","#fc4e2a","#e31a1c","#b10026"];
     function getColor(d) {
-        return d > 1000 ? '#7a0177' :
-            d > 500 ? '#ae017e' :
-            d > 200 ? '#dd3497' :
-            d > 100 ? '#f768a1' :
-            d > 50 ? '#fa9fb5' :
-            d > 10 ? '#fcc5c0' :
-            '#feebe2';
+        return  d > 1000 ? colors[6] :
+                d > 500 ? colors[5] :
+                d > 200 ? colors[4] :
+                d > 100 ? colors[3] :
+                d > 50 ?  colors[2]:
+                d > 10 ?  colors[1]:
+                        colors[0];
     }
 
     function districtStyle(feature) {
@@ -23,7 +66,7 @@ window.onload = function() {
             fillColor: getColor(feature.properties.Pop_Densit),
             weight: 1,
             opacity: 1,
-            color: 'black',
+            color: 'grey',
             dashArray: '',
             fillOpacity: 0.8
         };
@@ -36,7 +79,24 @@ window.onload = function() {
     function zoomOut(e) {
         mymap.setZoom(mymap.getMinZoom());
     }
-    var districts = new L.geoJson(districtpopulation, {
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 5,
+            color: '#666',
+            dashArray: '',
+            fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+        }
+    }
+    function resetHighlight(e) {
+        districts.resetStyle(e.target);
+    }
+    districts = new L.geoJson(districtpopulation, {
         style: districtStyle,
         onEachFeature: function(feature, layer) {
             layer.bindPopup("<b>Region:</b> " + feature.properties.REGION + "<br>" +
@@ -45,8 +105,8 @@ window.onload = function() {
                 "<b>Population:</b> " + feature.properties.Pop_Total + "<br>" +
                 "<b>Area (sq km)</b> :" + feature.properties.Area_sq_km);
             layer.on({
-                //mouseover: highlightFeature,
-                //mouseout: resetHighlight,
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
                 click: zoomToFeature,
                 dblclick: zoomOut
             });
@@ -60,12 +120,13 @@ window.onload = function() {
         var div = L.DomUtil.create('div', 'info legend'),
             grades = [0, 10, 20, 50, 100, 200, 500, 1000],
             labels = [];
+            div.innerHTML='<h4>Legend</h4>';
 
         // loop through our density intervals and generate a label with a colored square for each interval
         for (var i = 0; i < grades.length; i++) {
             div.innerHTML +=
                 '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                '<span>'+grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] +'</span>'+ '</br>' : '+');
         }
         return div;
     };
