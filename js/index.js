@@ -149,7 +149,7 @@ window.onload = function() {
         attr.properties.DistCode+'<br><b>Total Population: </b>'+
         attr.properties.Pop_Total+'<br><b>Male Population: </b>'+
         attr.properties.Male+'<br><b>Female Population: </b>'+
-        attr.properties.Female+'<br><b>Population Density</b>'+
+        attr.properties.Female+'<br><b>Population Density: </b>'+
         attr.properties.Pop_Densit+'<br><b>Area (km<sup>2</sup>): </b>'+
         attr.properties.Area_sq_km+'span>km<sup>2</sup></span>' : 
         '<p>Hover over a district</p>')
