@@ -1,6 +1,6 @@
 window.onload = function() {
     var districts;
-    var zoom = 18, ,
+    var zoom = 18,
     mapboxURL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
     Attribution='Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>';
    
@@ -88,13 +88,15 @@ window.onload = function() {
             dashArray: '',
             fillOpacity: 0.7
         });
-
+        controlCenter.update(layer.feature);
+        console.log("layers: ",layer.feature);
         if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
         }
     }
     function resetHighlight(e) {
         districts.resetStyle(e.target);
+        controlCenter.update();
     }
     districts = new L.geoJson(districtpopulation, {
         style: districtStyle,
@@ -113,9 +115,8 @@ window.onload = function() {
         }
     }).addTo(mymap);
     var legend = L.control({
-        position: 'bottomright'
+        position: 'bottomleft'
     });
-
     legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend'),
             grades = [0, 10, 20, 50, 100, 200, 500, 1000],
@@ -131,4 +132,27 @@ window.onload = function() {
         return div;
     };
     legend.addTo(mymap);
+    
+    var controlCenter = L.control({
+        position:'bottomright'
+    });
+    controlCenter.onAdd = function(map){
+        this._div = L.DomUtil.create('div', 'controlCenter');
+        this.update();
+        return this._div;
+    };
+    controlCenter.update = function(attr){
+        this._div.innerHTML ='<h4>ControlCenter</h4>'+ (attr ? '<b>Region: </b>'+attr.properties.REGION+'<br>'+
+        '<b>District: </b>'+attr.properties.DISTRICT+
+        '<br><b>District Capital: </b>'+
+        attr.properties.District_C+'<br><b>District Code: </b>'+
+        attr.properties.DistCode+'<br><b>Total Population: </b>'+
+        attr.properties.Pop_Total+'<br><b>Male Population: </b>'+
+        attr.properties.Male+'<br><b>Female Population: </b>'+
+        attr.properties.Female+'<br><b>Population Density</b>'+
+        attr.properties.Pop_Densit+'<br><b>Area (km<sup>2</sup>): </b>'+
+        attr.properties.Area_sq_km+'span>km<sup>2</sup></span>' : 
+        '<p>Hover over a district</p>')
+    };
+    controlCenter.addTo(mymap);
 };
